@@ -1,40 +1,28 @@
-syntax = "proto3";
+edition = "2023";
+import "google/protobuf/timestamp.proto";
 
-package UDataPacketImport.GRPC.V1;
+package UDataPacketImportAPI.V1;
 
-/*!
- * A sensor's network code, station name, channel code, and location code.
- * Together this information comprises a unique stream identifier.
- */
-message StreamIdentifier
-{
-    string network = 1; /// The network code - e.g., UU.
-    string station = 2; /// The station code - e.g., FORK.
-    string channel = 3; /// The channel code - e.g., HHZ.
-    optional string location_code = 4; /// The location code - e.g., 01
-}
+//option features.utf8_validation = NONE;
+//option features.enforce_naming_style = STYLE2024;
+//option features.default_symbol_visibility = EXPORT_ALL;
+//option features.(pb.cpp).string_type = STRING;
+
+import "uDataPacketImportAPI/v1/stream_identifier.proto";
+import "uDataPacketImportAPI/v1/data_type.proto";
 
 /*!
  * Defines a data packet.  This amounts to a stream identifier, a start time,
- * sampling rate, and data.
+ * sampling rate, and data.  Note, the data is always stored in little endian.
  */
-message Packet
-{
-    enum DataType
-    {
-        Unknown = 0; /// The data type is unkonwn.  This can happen if there is no data.
-        Integer32 = 1; /// The data is a vector of int32_t's stored in data32i.
-        Double = 2; /// The data is a vector of doubles stored in data64f.
-        Float = 3; /// The data is a vector of floats stored in data32f.
-        Integer64 = 4; /// The data is a vector of int64_t's stored in data64i.
-    }
-
+message Packet {
+    /*! 
+     * Defines the underlying data type when interpreting data.
+     */
     StreamIdentifier stream_identifier = 1; /// The packet identifier.
-    int64 start_time_mus = 2; /// The packet's start time (UTC) in microseconds since the epoch.
+    google.protobuf.Timestamp start_time = 2; /// The packet's start time (UTC) in microseconds since the epoch.
     double sampling_rate = 3; /// The sampling rate in Hz.
     DataType data_type = 4; /// The data type.
-    repeated double data64f = 5; /// The double data.
-    repeated int64 data64i  = 6; /// The int64_t data.
-    repeated int32 data32i  = 7; /// The int32_t data.
-    repeated float data32f  = 8; /// The float data.
+    uint32 number_of_samples = 5; /// The number of samples.
+    bytes data = 6; /// The data.  This is always stored in little endian.
 }
